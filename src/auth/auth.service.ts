@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from 'src/user/user.model';
@@ -7,6 +7,7 @@ import { genSalt, hash, compare } from 'bcryptjs';
 import { RegisterAuthDto } from './dto/register.dto';
 import { LoginAuthDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
+import { TokenDto } from './dto/token.dto';
 
 @Injectable()
 export class AuthService {
@@ -37,6 +38,19 @@ export class AuthService {
 
     const token = await this.issueTokenPair(String(existUser._id));
     return { user: this.getUserField(existUser), ...token };
+  }
+
+  async getNewTokens({ refreshToken }: TokenDto) {
+    if (!refreshToken) throw new UnauthorizedException('Please sign in!');
+
+    const result = await this.jwtService.verifyAsync(refreshToken);
+
+    if (!result) throw new UnauthorizedException('Invalid token or expired');
+
+    const user = await this.userModel.findById(result._id);
+
+    const token = await this.issueTokenPair(String(user._id));
+    return { user: this.getUserField(user), ...token };
   }
 
   async isExistUser(email: string): Promise<UserDocument> {
