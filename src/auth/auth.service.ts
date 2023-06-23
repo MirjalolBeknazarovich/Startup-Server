@@ -16,7 +16,7 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly jwtService: JwtService,
   ) {}
-  async register(dto: RegisterAuthDto) {
+  async register(dto: LoginAuthDto) {
     const existUser = await this.isExistUser(dto.email);
     if (existUser)
       throw new BadRequestException('User with that email is already exist in the system');
